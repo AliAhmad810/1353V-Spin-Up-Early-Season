@@ -3,10 +3,16 @@
 
 namespace ali::cata {
 
-extern bool enableShootReset;
+extern bool shoot;
 
-int shoot_and_reset();
+void cata_control();
 
-void shoot_cata();
+void toggle_cata();
+
+// extern bool enableShootReset;
+
+// int shoot_and_reset();
+
+// void shoot_cata();
 
 } // namespace ali::catapult

@@ -18,8 +18,18 @@ void two_mogo_constants();
 void exit_condition_defaults();
 void modified_exit_condition();
 
-void skills_auto();
-void solo_AWP();
-void right_side();
-void left_side();
+
+void five_disc_left_side();
+void six_disc_left_side();
+void six_disc_right_side();
+void eight_disc_right_side();
+void five_disc_solo_AWP();
+void eight_disc_solo_AWP();
+void twenty_four_disc_skills_auto();
+void thirty_disc_skills_auto();
+
+void solo_AWP_old();
+void two_disc_solo_AWP();
+void two_disc_right_side();
+void twelve_disc_skills_auto();
 void do_nothing();

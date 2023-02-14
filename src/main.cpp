@@ -1,7 +1,5 @@
 #include "main.h"
 #include "ALI/catapult.hpp"
-#include "ALI/drive.hpp"
-#include "ALI/pid.hpp"
 #include "autons.hpp"
 #include "globals.hpp"
 #include "pros/adi.hpp"
@@ -77,24 +75,38 @@ void initialize() {
 
   // Autonomous Selector using LLEMU
   ez::as::auton_selector.add_autons({
-    Auton("Skills", skills_auto),
-    Auton("Solo AWP", solo_AWP),
-    Auton("Right Side", right_side),
-    Auton("Left Side", left_side),
-    Auton("Example Drive\n\nDrive forward and come back.", drive_example), 
-    Auton("Example Turn\n\nTurn 3 times.", turn_example),
-    Auton("Drive and Turn\n\nDrive forward, turn, come back. ", drive_and_turn),
-    Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
-    Auton("Swing Example\n\nSwing, drive, swing.", swing_example),
-    Auton("Combine all 3 movements", combining_movements),
-    Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
+    // Default Auto
+    Auton("DEFAULT \n USUALLY DO NOTHING", thirty_disc_skills_auto),
+
+    // Right Side Autos
+    Auton("RIGHT SIDE \n 2 DISC", two_disc_right_side),
+    Auton("RIGHT SIDE \n 6 DISC", six_disc_right_side),
+    Auton("RIGHT SIDE \n 8 DISC", eight_disc_right_side),
+
+    // Left Side Autos
+    Auton("LEFT SIDE \n 5 DISC", five_disc_left_side),
+    Auton("LEFT_SIDE \n 6 DISC", six_disc_left_side),
+
+    // Solo AWP Autos
+    Auton("SOLO AWP \n 2 DISC", two_disc_solo_AWP), 
+    Auton("SOLO AWP \n 5 DISC", five_disc_solo_AWP),
+    Auton("SOLO AWP \n 8 DISC", eight_disc_solo_AWP),
+
+    // Skills Autos
+    Auton("SKILLS AUTO \n 12 DISC", twelve_disc_skills_auto),
+    Auton("SKILLS AUTO \n 24 DISC", twenty_four_disc_skills_auto),
+    Auton("SKILLS AUTO \n 30 DISC", thirty_disc_skills_auto),
   });
 
   // Initialize chassis and auton selector
   chassis.initialize();
   ez::as::initialize();
 
-  // Initialize the catapult rotation sensor
+  // Initialize cata
+  while(!cataLimit.get_value()) {
+    catapult.move_voltage(12000);
+  }
+  catapult.move_voltage(0);
   
 }
 
@@ -142,7 +154,8 @@ void autonomous() {
   chassis.reset_gyro(); // Reset gyro position to 0
   chassis.reset_drive_sensor(); // Reset drive sensors to 0
   chassis.set_drive_brake(MOTOR_BRAKE_HOLD); // Set motors to hold.  This helps autonomous consistency.
-  bandSlip.set_value(false);
+  bandSlip.set_value(false); // Make sure bandslip is not enabled yet
+  pros::Task cataTask(ali::cata::cata_control); // Create catapult task
 
   ez::as::auton_selector.call_selected_auton(); // Calls selected auton from autonomous selector.
 }
@@ -162,18 +175,14 @@ void autonomous() {
  */
 void opcontrol() {
 
-  // // Make sure expansion is closed
-  // expansion.set_value(false);
+  // Make sure expansion is closed
+  expansion.set_value(false);
 
-  // // This is preference to what you like to drive on.
-  // chassis.set_drive_brake(MOTOR_BRAKE_COAST);
+  // This is preference to what you like to drive on.
+  chassis.set_drive_brake(MOTOR_BRAKE_COAST);
   
-  // intake.set_brake_mode(MOTOR_BRAKE_COAST);
-  // catapult.set_brake_mode(MOTOR_BRAKE_HOLD);
-  // bandSlip.set_value(true);
-
-  // // Create catapult task
-  // pros::Task drive_move (ali::pid::chassis_control);
+  intake.set_brake_mode(MOTOR_BRAKE_COAST);
+  catapult.set_brake_mode(MOTOR_BRAKE_HOLD);
 
   while (true) {
 
@@ -201,7 +210,9 @@ void opcontrol() {
     // Intake control
     // . . .
 
-    if (master.get_digital(DIGITAL_L2)) {
+    if(!cataLimit.get_value()) {
+      intake.move_voltage(12000);
+    } else if (master.get_digital(DIGITAL_L2)) {
       intake.move_voltage(12000);
     } else if (master.get_digital(DIGITAL_L1)) {
       intake.move_voltage(-12000);
@@ -227,10 +238,6 @@ void opcontrol() {
       
     } else if(master.get_digital_new_press(DIGITAL_DOWN)) {
       bandSlip.set_value(false);
-    }
-
-    if(master.get_digital_new_press(DIGITAL_Y)) {
-      autonomous();
     }
 
     pros::delay(ez::util::DELAY_TIME); // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
